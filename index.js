@@ -5,23 +5,33 @@ const { spawn } = require('child_process');
 /****************************************************/
 /* pass to model */
 /****************************************************/
-const passToAIModel = (data, id) => {
+const passToAIModel = async (data, id) => {
   const pyPro = spawn('python', [
     './deep_model/model.py',
     JSON.stringify(data),
   ]);
   pyPro.stdout.on('data', function (result) {
+    // let localSwimmerStatus = result.toString().replace(/(\r\n|\n|\r)/gm, '');
     // console.log(result.toString());
-    let localSwimmerStatus = result.toString().replace(/(\r\n|\n|\r)/gm, '');
-    console.log(result.toString());
+    // take the string after thw word out
+    let localSwimmerStatus = result.toString().split('out')[1];
+    // convert the string to array
+    // convert the string to array
+    // remove [ and ] from the string
+    if (localSwimmerStatus) {
+      localSwimmerStatus = localSwimmerStatus.trim().replace(/[\[\]']+/g, '');
+    }
     // devicesBuffer[id].swimmerStatusDescription = localSwimmerStatus;
-    if (
-      localSwimmerStatus == 'ActiveDrowning' ||
-      localSwimmerStatus == 'PassiveDrowning'
-    ) {
-      // devicesBuffer[id].swimmerStatus = 'Drowning'; // or 'Drowning' | 'Normal
-    } else {
-      // devicesBuffer[id].swimmerStatus = 'Normal'; // or 'Drowning' | 'Normal
+    if (localSwimmerStatus == '1' || localSwimmerStatus == '2') {
+      console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
+      console.log(`⚓⚓ Status | 🟥🟥 Drowning 🟥🟥 `);
+      console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
+      return 'Drowning';
+    } else if (localSwimmerStatus == '0') {
+      console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
+      console.log(`⚓⚓ Status | 🟩🟩 Normal 🟩🟩 `);
+      console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
+      return 'Normal';
     }
   });
   pyPro.stderr.on('data', function (data) {
@@ -130,11 +140,14 @@ let data = [
   [1, 1, 1],
   [1, 1, 1],
 ];
-passToAIModel(data, 'io');
+
+passToAIModel(data, 'id');
+let AccData = [];
 // Define the MQTT broker URL and topic to subscribe to
 const brokerUrl = 'mqtt://localhost';
 const topic = 'GW1/SWIDRO1/ACC';
 let counterValid = 0;
+let counterValidPassed = 0;
 let counterInvalid = 0;
 // Define the headers for the CSV file
 const headers = ['Timestamp', 'X', 'Y', 'Z'];
@@ -160,11 +173,19 @@ client.on('connect', () => {
 });
 
 // Define the callback function to handle received messages
-client.on('message', (topic, message) => {
+client.on('message', async (topic, message) => {
   const data = parseMessage(message.toString());
   if (data) {
     // const timestamp = Date.now();
+    // every 100 readings pass to AI model and readings clear the array
+    if (counterValidPassed == 100) {
+      AccData.push([data.X, data.Y, data.Z]);
+      passToAIModel(AccData, 'id');
+      counterValidPassed = 0;
+      AccData = [];
+    }
     const csvRow = [data.timestamp, data.X, data.Y, data.Z].join(',');
+    counterValidPassed;
     counterValid += 1;
     const dataLog = `TS: ${data.timestamp} , X: ${data.X} , Y: ${data.Y} , Z: ${data.Z}`;
     console.log(
