@@ -2,6 +2,27 @@ const fs = require('fs');
 const mqtt = require('mqtt');
 const { PythonShell } = require('python-shell');
 const { spawn } = require('child_process');
+let AccData = [];
+// Define the MQTT broker URL and topic to subscribe to
+const brokerUrl = 'mqtt://localhost';
+const topic = 'GW1/SWIDRO1/ACC';
+let counterValid = 0;
+let counterValidPassed = 0;
+let counterInvalid = 0;
+// Define the headers for the CSV file
+const headers = ['Timestamp', 'X', 'Y', 'Z'];
+// ****************************************************************
+// ****************************************************************
+// pool_swimming_n
+// pool_drowning_n
+// pool_idle_n
+const label = 'normal/n1_9';
+/****************************************************/
+/* calculate the magnitude of x y z*/
+/****************************************************/
+const caculateAccMagnitude = (x, y, z) => {
+  return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+}
 /****************************************************/
 /* pass to model */
 /****************************************************/
@@ -39,21 +60,7 @@ const passToAIModel = async (data, id) => {
   });
 };
 
-let AccData = [];
-// Define the MQTT broker URL and topic to subscribe to
-const brokerUrl = 'mqtt://localhost';
-const topic = 'GW1/SWIDRO1/ACC';
-let counterValid = 0;
-let counterValidPassed = 0;
-let counterInvalid = 0;
-// Define the headers for the CSV file
-const headers = ['Timestamp', 'X', 'Y', 'Z'];
-// ****************************************************************
-// ****************************************************************
-// pool_swimming_n
-// pool_drowning_n
-// pool_idle_n
-const label = 'cap/c_0';
+
 // ****************************************************************
 // ****************************************************************
 // Connect to the MQTT broker and subscribe to the topic
@@ -75,20 +82,23 @@ client.on('message', async (topic, message) => {
   if (data) {
     // const timestamp = Date.now();
     // every 100 readings pass to AI model and readings clear the array
-    if (counterValidPassed == 100) {
-      AccData.push([data.X, data.Y, data.Z]);
+    AccData.push([data.X, data.Y, data.Z]);
+    if ( AccData.length == 100) {
+      console.log('🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝');
       passToAIModel(AccData, 'id');
       counterValidPassed = 0;
       AccData = [];
     }
     const csvRow = [data.timestamp, data.X, data.Y, data.Z].join(',');
-    counterValidPassed;
+    counterValidPassed +=1;
     counterValid += 1;
     const dataLog = `TS: ${data.timestamp} , X: ${data.X} , Y: ${data.Y} , Z: ${data.Z}`;
     console.log(
       '-----------------------------------------------------------------------'
     );
-    console.log(`✅✅ valid (${counterValid}) | ${dataLog}`);
+    // get the magnetuide of every reading
+    const magnitude = caculateAccMagnitude(data.X, data.Y, data.Z);
+    console.log(`✅✅ valid (${counterValid}) | ${dataLog} || M: ${Math.round(magnitude)} ||`);
     writeCsv(csvRow);
   }
 });

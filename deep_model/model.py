@@ -11,7 +11,7 @@ newData = ast.literal_eval(test)
 # print newData size
 print(len(newData))
 df = newData
-
+# df = int(len(df)/100)*100
 x_reshaped = np.asarray(df, dtype= np.float32).reshape(-1, 100, 3)
 loaded_model = load_model("./deep_model/model.h5")
 
