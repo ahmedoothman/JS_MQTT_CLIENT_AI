@@ -22,7 +22,7 @@ const label = 'normal/n1_9';
 /****************************************************/
 const caculateAccMagnitude = (x, y, z) => {
   return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-}
+};
 /****************************************************/
 /* pass to model */
 /****************************************************/
@@ -43,12 +43,12 @@ const passToAIModel = async (data, id) => {
       localSwimmerStatus = localSwimmerStatus.trim().replace(/[\[\]']+/g, '');
     }
     // devicesBuffer[id].swimmerStatusDescription = localSwimmerStatus;
-    if (localSwimmerStatus == '1' || localSwimmerStatus == '2') {
+    if (localSwimmerStatus == '0' || localSwimmerStatus == '1') {
       console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
       console.log(`⚓⚓ Status | 🟥🟥 Drowning 🟥🟥 `);
       console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
       return 'Drowning';
-    } else if (localSwimmerStatus == '0') {
+    } else if (localSwimmerStatus == '2') {
       console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
       console.log(`⚓⚓ Status | 🟩🟩 Normal 🟩🟩 `);
       console.log('🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥🚥');
@@ -59,7 +59,6 @@ const passToAIModel = async (data, id) => {
     console.error(data.toString());
   });
 };
-
 
 // ****************************************************************
 // ****************************************************************
@@ -83,14 +82,14 @@ client.on('message', async (topic, message) => {
     // const timestamp = Date.now();
     // every 100 readings pass to AI model and readings clear the array
     AccData.push([data.X, data.Y, data.Z]);
-    if ( AccData.length == 100) {
+    if (AccData.length == 100) {
       console.log('🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝');
       passToAIModel(AccData, 'id');
       counterValidPassed = 0;
       AccData = [];
     }
     const csvRow = [data.timestamp, data.X, data.Y, data.Z].join(',');
-    counterValidPassed +=1;
+    counterValidPassed += 1;
     counterValid += 1;
     const dataLog = `TS: ${data.timestamp} , X: ${data.X} , Y: ${data.Y} , Z: ${data.Z}`;
     console.log(
@@ -98,7 +97,11 @@ client.on('message', async (topic, message) => {
     );
     // get the magnetuide of every reading
     const magnitude = caculateAccMagnitude(data.X, data.Y, data.Z);
-    console.log(`✅✅ valid (${counterValid}) | ${dataLog} || M: ${Math.round(magnitude)} ||`);
+    console.log(
+      `✅✅ valid (${counterValid}) | ${dataLog} || M: ${Math.round(
+        magnitude
+      )} ||`
+    );
     writeCsv(csvRow);
   }
 });
