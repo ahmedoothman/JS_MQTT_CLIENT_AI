@@ -84,6 +84,7 @@ client.on('message', async (topic, message) => {
     AccData.push([data.X, data.Y, data.Z]);
     if (AccData.length == 100) {
       console.log('🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝');
+      console.log('🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝🔝');
       passToAIModel(AccData, 'id');
       counterValidPassed = 0;
       AccData = [];
